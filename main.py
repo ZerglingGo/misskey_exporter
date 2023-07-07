@@ -17,11 +17,12 @@ class MisskeyCollector(object):
         stats = httpx.post(f'{self.host}/api/stats', json={}).json()
         yield GaugeMetricFamily('misskey_users_total', 'total users count', value=stats['originalUsersCount'])
 
-        queue_stats = httpx.post(f'{self.host}/api/admin/queue/stats', json={'i': self.token}).json()
-        for queue, stats in queue_stats.items():
-            for stat, count in stats.items():
-                stat = stat.replace('-', '_')
-                yield GaugeMetricFamily(f'misskey_queue_{queue}_{stat}', f'{queue} {stat} count', value=count)
+        if self.token is not None:
+            queue_stats = httpx.post(f'{self.host}/api/admin/queue/stats', json={'i': self.token}).json()
+            for queue, stats in queue_stats.items():
+                for stat, count in stats.items():
+                    stat = stat.replace('-', '_')
+                    yield GaugeMetricFamily(f'misskey_queue_{queue}_{stat}', f'{queue} {stat} count', value=count)
 
         ap_request = httpx.post(f'{self.host}/api/charts/ap-request', json={'span': 'hour', 'limit': 1}).json()
         yield GaugeMetricFamily(f'misskey_ap_deliver_failed', f'activitypub deliver failed count', value=ap_request['deliverFailed'][0])
